@@ -1,30 +1,73 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <img alt="Rust logo" src="./assets/groundhog_bike.png" size=200/>
+  <h2> ⚠️ Important security information ⚠️ </h2>
+  <h3> 
+    ... brought to you by a rodent 🐿️.     
+    <button @click="toggleDemo()">{{demo ? 'DEMO' : 'LIVE'}}</button>
+ </h3>
+  
+
+  <div class="chart-container" style="margin:0 auto; width:70vw">
+    <MyChart :chartSensorData="dataValues"/>
   </div>
-  <HelloWorld msg="Vite + Vue" />
+
 </template>
 
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
+import MyChart from './components/MyChart.vue'
+import { invoke } from '@tauri-apps/api/tauri'
+import { listen } from '@tauri-apps/api/event'
+
+export default defineComponent({
+  name: 'App',
+  components: {
+    MyChart,
+  },
+  data(){
+      return {
+          msg: "",
+          dataValues: new Array(40).fill(10),
+          demo: ref(false) 
+      };
+  },
+  async mounted(){
+    await invoke('init_process');
+    listen("distance_emitter", x => {
+        this.dataValues.push((x as any).payload as string);
+        if(this.dataValues.length > 40) {
+          this.dataValues.shift();
+        } 
+    });
+  },
+  
+  methods: {
+    async toggleDemo(){ 
+      this.demo = await invoke("toggle_demo");
+    }
+  },
+
+});
+</script>
+
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+img{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 60px;
+
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+h2, h3 {
+  font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  text-align: center;
+  color: rgb(150, 46, 5);
+  margin-top: 1em;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+label {
+  margin: 0 0.5em;
+  font-weight: bold;
 }
+
 </style>
